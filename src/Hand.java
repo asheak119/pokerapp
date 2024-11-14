@@ -72,10 +72,10 @@ public class Hand {
     }
     public void sort() {
         Hand sorted = new Hand();
-        // Insertion sort
+        // Insertion sort in descending order
         for (Card card : cards) {
             int i = 0;
-            while (i < 5 && sorted.cards[i] != null && card.getValue() > sorted.cards[i].getValue()) {
+            while (i < 5 && sorted.cards[i] != null && card.compare(sorted.cards[i]) < 0) {
                 i++;
             }
             for (int j = 4; j > i; j--) {
@@ -93,29 +93,121 @@ public class Hand {
      * Format: {handValue, highCardValue, secondaryCardValue(in case of two pair or full house)}
      */
     public int[] evaluate() {
+        // Sort the cards in descending order
         sort();
+
+        // Check for Royal Flush
+        if (isRoyalFlush()) {
+            return new int[] {10, cards[0].getValue()};
+        }
+
+        // Check for Straight Flush
+        if (isStraightFlush()) {
+            // Check for 5-high straight flush (A-2-3-4-5)
+            if (cards[4].getValue() == 5) {
+                return new int[] {9, 5};
+            }
+            return new int[] {9, cards[0].getValue()};
+        }
+
+        // Check for Four of a Kind
+        if (isFourOfAKind()) {
+            if (cards[0].getValue() == cards[3].getValue()) {
+                return new int[] {8, cards[0].getValue(), cards[4].getValue()};
+            } else {
+                return new int[] {8, cards[1].getValue(), cards[0].getValue()};
+            }
+        }
+
+        // Check for Full House
+        if (isFullHouse()) {
+            if (cards[0].getValue() == cards[2].getValue()) {
+                return new int[] {7, cards[0].getValue(), cards[3].getValue()};
+            } else {
+                return new int[] {7, cards[2].getValue(), cards[0].getValue()};
+            }
+        }
+
+        // Check for Flush
         if (isFlush()) {
-            if (isStraight()) {
-                if (cards[4].getValue() == 14) {
-                    if (cards[0].getValue() == 2) {
-                        return new int[] {2, 5, 0};
-                    } else {
-                        return new int[] {1, 14, 0};
-                    }
-                }
-                return new int[] {2, cards[4].getValue(), 0};
-            }
-            return new int[] {5, cards[4].getValue(), 0};
+            return new int[] {6, cards[0].getValue()};
         }
+
+        // Check for Straight
         if (isStraight()) {
-            if (cards[4].getValue() == 14 && cards[0].getValue() == 2) {
-                return new int[] {6, 5, 0};
+            // Check for 5-high straight (A-2-3-4-5)
+            if (cards[4].getValue() == 5) {
+                return new int[] {5, 5};
             }
-            return new int[] {6, cards[4].getValue(), 0};
+            return new int[] {5, cards[0].getValue()};
         }
-        
-        return new int[] {10, cards[0].getValue(), 0};
+
+        // Check for Three of a Kind
+        if (isThreeOfAKind()) {
+            for (int i = 0; i < 3; i++) {
+                if (cards[i].getValue() == cards[i + 1].getValue() && cards[i].getValue() == cards[i + 2].getValue()) {
+                    return new int[] {4, cards[i].getValue(), cards[4].getValue()};
+                }
+            }
+        }
+
+        // Check for Two Pair
+        if (isTwoPair()) {
+            if (cards[0].getValue() == cards[1].getValue() && cards[2].getValue() == cards[3].getValue()) {
+                return new int[] {3, cards[0].getValue(), cards[2].getValue()};
+            } else if (cards[0].getValue() == cards[1].getValue() && cards[3].getValue() == cards[4].getValue()) {
+                return new int[] {3, cards[0].getValue(), cards[3].getValue()};
+            } else if (cards[1].getValue() == cards[2].getValue() && cards[3].getValue() == cards[4].getValue()) {
+                return new int[] {3, cards[1].getValue(), cards[3].getValue()};
+            }
+        }
+
+        // Check for Pair
+        if (isPair()) {
+            for (int i = 0; i < 4; i++) {
+                if (cards[i].getValue() == cards[i + 1].getValue()) {
+                    return new int[] {2, cards[i].getValue(), cards[4].getValue()};
+                }
+            }
+        }
+
+        // High Card
+        return new int[] {1, cards[0].getValue()};
     }
+
+    private boolean isStraight() {
+        int[] values = new int[5];
+        for (int i = 0; i < 5; i++) {
+            values[i] = cards[i].getValue();
+        }
+        Arrays.sort(values);
+
+        // Check for 5-high straight (A-2-3-4-5)
+        if (values[0] == 1 && values[1] == 2 && values[2] == 3 && values[3] == 4 && values[4] == 5) {
+            return true;
+        }
+
+        // Check for Ace-high straight (10-J-Q-K-A)
+        if (values[0] == 1 && values[1] == 10 && values[2] == 11 && values[3] == 12 && values[4] == 13) {
+            return true;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            if (values[i] + 1 != values[i + 1]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isStraightFlush() {
+        return isFlush() && isStraight();
+    }
+
+    private boolean isRoyalFlush() {
+        return isStraightFlush() && cards[0].getValue() == 1 && cards[1].getValue() == 13;
+    }
+
     public boolean isFlush() {
         int suit = cards[0].getSuit();
         for (Card card : cards) {
@@ -125,19 +217,54 @@ public class Hand {
         }
         return true;
     }
-    public boolean isStraight() {
-        int[] values = new int[5];
-        for (int i = 0; i < 5; i++) {
-            values[i] = cards[i].getValue();
-        }
-        if (Arrays.equals(values, new int[] {2,3,4,5,14})) {
-            return true;
-        }
-        for (int i = 0; i < 4; i++) {
-            if (values[i] + 1 != values[i + 1]) {
-                return false;
+
+    public boolean isFourOfAKind() {
+        for (int i = 0; i < 2; i++) {
+            if (cards[i].getValue() == cards[i + 1].getValue() && cards[i].getValue() == cards[i + 2].getValue() && cards[i].getValue() == cards[i + 3].getValue()) {
+                return true;
             }
         }
-        return true;
+        return false;
+    }
+
+    public boolean isFullHouse() {
+        if (cards[0].getValue() == cards[1].getValue() && cards[0].getValue() == cards[2].getValue() && cards[3].getValue() == cards[4].getValue()) {
+            return true;
+        }
+        if (cards[0].getValue() == cards[1].getValue() && cards[2].getValue() == cards[3].getValue() && cards[2].getValue() == cards[4].getValue()) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isThreeOfAKind() {
+        for (int i = 0; i < 3; i++) {
+            if (cards[i].getValue() == cards[i + 1].getValue() && cards[i].getValue() == cards[i + 2].getValue()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isTwoPair() {
+        if (cards[0].getValue() == cards[1].getValue() && cards[2].getValue() == cards[3].getValue()) {
+            return true;
+        }
+        if (cards[0].getValue() == cards[1].getValue() && cards[3].getValue() == cards[4].getValue()) {
+            return true;
+        }
+        if (cards[1].getValue() == cards[2].getValue() && cards[3].getValue() == cards[4].getValue()) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isPair() {
+        for (int i = 0; i < 4; i++) {
+            if (cards[i].getValue() == cards[i + 1].getValue()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
