@@ -1,4 +1,4 @@
-public class Action {
+/*public class Action {
   
   private ActionType type;
   private int amount; // Amount for each bet or raise
@@ -21,3 +21,4 @@ public class Action {
         return player;
     }
 }
+*/
