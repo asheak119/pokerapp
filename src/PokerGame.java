@@ -52,8 +52,6 @@ public class PokerGame{
             user.openPrivateChannel().queue((channel) -> {
                 channel.sendMessage(message).queue();
             });
-        } else {
-            System.out.println("User " + user.getAsMention() + " not found.");
         }
     }
     
