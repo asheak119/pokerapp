@@ -8,17 +8,18 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.entities.User;
 
-public class PokerGame{
+public class PokerGame implements EventListener {
     private Deck deck;
     private HashMap<Player, Hand> playerHands;
     private int numPlayers;
-    private JDA jda;
+    private MessageChannel channel;
     List<Player> players;
 
-    public PokerGame(List<Player> players) {
+    public PokerGame(List<Player> players, MessageChannel channel) {
         this.numPlayers = players.size();
         this.deck = new Deck();
         this.players = players;
+        this.channel = channel;
         this.playerHands = new HashMap<Player, Hand>();
         for (Player player : players) {
             playerHands.put(player, new Hand());
@@ -43,8 +44,16 @@ public class PokerGame{
             playerHands.get(players.get(i)).setCards(cards);
             sendMessageToPlayer(players.get(i), "Your hand: " + Arrays.toString(cards));
         }
-        System.out.println("Hands dealt!");
+        channel.sendMessage("Hands dealt!").queue();
     
+    }
+    public void bettingRound() {
+        // Implement betting round logic here
+        for (Player player : players) {
+            channel.sendMessage(player.getUser().getAsMention() + "What is your bet?").queue();
+            // Wait for player input
+
+        }
     }
     private void sendMessageToPlayer(Player player, String message) {
         User user = player.getUser();
@@ -54,5 +63,8 @@ public class PokerGame{
             });
         }
     }
-    
+
+    @Override
+    public void onEvent(GenericEvent event) {
+    }
 }

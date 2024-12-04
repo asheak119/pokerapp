@@ -14,7 +14,7 @@ public class Main implements EventListener {
 
     public static void main(String[] args) {
         // Initialize the bot
-        JDABuilder.createDefault("USER_ID_HERE") // Replace with your bot token
+        JDABuilder.createDefault("TOKEN_HERE") // Replace with your bot token
             .disableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS)
             .setEnabledIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
             .addEventListeners(new Main()) // Add event listener
@@ -61,7 +61,7 @@ public class Main implements EventListener {
                         channel.sendMessage("Not enough players to start the game.").queue();
                     } else {
                         channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
-                        PokerGame game = new PokerGame(players);
+                        PokerGame game = new PokerGame(players, channel);
                         game.startGame();
                         players.clear(); // Clear the list of players after starting the game
                         gameInitiated = false; // Reset the game initiation flag
