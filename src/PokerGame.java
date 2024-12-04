@@ -1,12 +1,28 @@
-public class PokerGame {
-    private Deck deck;
-    private Hand[] playerHands;
-    private int numPlayers;
+import java.util.*;
+import net.dv8tion.jda.api.*;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.hooks.EventListener;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.events.GenericEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.User;
 
-    public PokerGame(int numPlayers) {
-        this.numPlayers = numPlayers;
+public class PokerGame{
+    private Deck deck;
+    private HashMap<Player, Hand> playerHands;
+    private int numPlayers;
+    private JDA jda;
+    List<Player> players;
+
+    public PokerGame(List<Player> players) {
+        this.numPlayers = players.size();
         this.deck = new Deck();
-        this.playerHands = new Hand[numPlayers];
+        this.players = players;
+        this.playerHands = new HashMap<Player, Hand>();
+        for (Player player : players) {
+            playerHands.put(player, new Hand());
+        }
     }
 
     public void startGame() {
@@ -24,10 +40,21 @@ public class PokerGame {
             for (int j = 0; j < 5; j++) {
                 cards[j] = deck.deal();
             }
-            playerHands[i] = new Hand(cards);
-            System.out.println("Player " + (i + 1) + "'s hand: " + playerHands[i]);
+            playerHands.get(players.get(i)).setCards(cards);
+            sendMessageToPlayer(players.get(i), "Your hand: " + Arrays.toString(cards));
         }
+        System.out.println("Hands dealt!");
     
+    }
+    private void sendMessageToPlayer(Player player, String message) {
+        User user = player.getUser();
+        if (user != null) {
+            user.openPrivateChannel().queue((channel) -> {
+                channel.sendMessage(message).queue();
+            });
+        } else {
+            System.out.println("User " + user.getAsMention() + " not found.");
+        }
     }
     
 }
