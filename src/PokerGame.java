@@ -45,6 +45,27 @@ public class PokerGame implements EventListener {
             sendMessageToPlayer(players.get(i), "Your hand: " + Arrays.toString(cards));
         }
         channel.sendMessage("Hands dealt!").queue();
+       
+        // Evaluate hands and determine the winner
+        int winnerIndex = -1;
+        int[] bestHandValue = null; 
+
+        for (int i = 0; i < numPlayers; i++) {
+            int[] handValue = playerHands.evaluate();
+            System.out.println("Player " + (i + 1) + " has: " + getHandName(handValue[0]));
+    
+            // Update the best hand
+            if (bestHandValue == null || compareHands(handValue, bestHandValue) > 0) {
+                bestHandValue = handValue;
+                winnerIndex = i;
+            }
+        }
+
+        if (winnerIndex >= 0) {
+            System.out.println("Player " + (winnerIndex + 1) + " wins with a " + getHandName(bestHandValue[0]));
+        } else {
+            System.out.println("No winner could be determined.");
+        }
     
     }
     public void bettingRound() {
@@ -68,7 +89,7 @@ public class PokerGame implements EventListener {
     public void onEvent(GenericEvent event) {
  
     }    
-           private int compareHands(int[] hand1, int[] hand2) {
+    private int compareHands(int[] hand1, int[] hand2) {
         if (hand1[0] != hand2[0]) {
             return Integer.compare(hand1[0], hand2[0]); // Compare hand types
         }
@@ -80,14 +101,14 @@ public class PokerGame implements EventListener {
     }
   
     }
-        private String getHandName(int value){
-        String[] handNames = {
-            "High Card", "Pair", "Two Pair", "Three of a Kind",
-            "Straight", "Flush", "Full House", "Four of a Kind",
-            "Straight Flush", "Royal Flush"
-        };
-        if (value >= 1 && value <= handNames.length) {
-            return handNames[value - 1];
-        }
-        return "Unknown Hand";    
+    private String getHandName(int value){
+    String[] handNames = {
+        "High Card", "Pair", "Two Pair", "Three of a Kind",
+        "Straight", "Flush", "Full House", "Four of a Kind",
+        "Straight Flush", "Royal Flush"
+    };
+    if (value >= 1 && value <= handNames.length) {
+        return handNames[value - 1];
+    }
+    return "Unknown Hand";    
 }
