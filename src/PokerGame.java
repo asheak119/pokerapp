@@ -66,5 +66,28 @@ public class PokerGame implements EventListener {
 
     @Override
     public void onEvent(GenericEvent event) {
+ 
+    }    
+           private int compareHands(int[] hand1, int[] hand2) {
+        if (hand1[0] != hand2[0]) {
+            return Integer.compare(hand1[0], hand2[0]); // Compare hand types
+        }
+        if (hand1[1] != hand2[1]) {
+            return Integer.compare(hand1[1], hand2[1]); // Compare high cards
+        }
+        return Integer.compare(hand1[2], hand2[2]); // Compare secondary cards (for ties)
+   
     }
+  
+    }
+        private String getHandName(int value){
+        String[] handNames = {
+            "High Card", "Pair", "Two Pair", "Three of a Kind",
+            "Straight", "Flush", "Full House", "Four of a Kind",
+            "Straight Flush", "Royal Flush"
+        };
+        if (value >= 1 && value <= handNames.length) {
+            return handNames[value - 1];
+        }
+        return "Unknown Hand";    
 }
