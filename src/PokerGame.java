@@ -13,14 +13,14 @@ public class PokerGame implements EventListener {
     private HashMap<Player, Hand> playerHands;
     private int numPlayers;
     private MessageChannel channel;
-    List<Player> players;
+    private List<Player> players;
 
     public PokerGame(List<Player> players, MessageChannel channel) {
         this.numPlayers = players.size();
         this.deck = new Deck();
         this.players = players;
         this.channel = channel;
-        this.playerHands = new HashMap<Player, Hand>();
+        this.playerHands = new HashMap<>();
         for (Player player : players) {
             playerHands.put(player, new Hand());
         }
@@ -34,7 +34,7 @@ public class PokerGame implements EventListener {
 
         deck.shuffle();
         System.out.println("Deck shuffled!");
-    
+
         // Deal hands to players
         for (int i = 0; i < numPlayers; i++) {
             Card[] cards = new Card[5];
@@ -45,15 +45,15 @@ public class PokerGame implements EventListener {
             sendMessageToPlayer(players.get(i), "Your hand: " + Arrays.toString(cards));
         }
         channel.sendMessage("Hands dealt!").queue();
-       
+
         // Evaluate hands and determine the winner
         int winnerIndex = -1;
-        int[] bestHandValue = null; 
+        int[] bestHandValue = null;
 
         for (int i = 0; i < numPlayers; i++) {
-            int[] handValue = playerHands.evaluate();
+            int[] handValue = playerHands.get(players.get(i)).evaluate();
             System.out.println("Player " + (i + 1) + " has: " + getHandName(handValue[0]));
-    
+
             // Update the best hand
             if (bestHandValue == null || compareHands(handValue, bestHandValue) > 0) {
                 bestHandValue = handValue;
@@ -66,8 +66,8 @@ public class PokerGame implements EventListener {
         } else {
             System.out.println("No winner could be determined.");
         }
-    
     }
+
     public void bettingRound() {
         // Implement betting round logic here
         for (Player player : players) {
@@ -76,6 +76,7 @@ public class PokerGame implements EventListener {
 
         }
     }
+
     private void sendMessageToPlayer(Player player, String message) {
         User user = player.getUser();
         if (user != null) {
@@ -85,10 +86,6 @@ public class PokerGame implements EventListener {
         }
     }
 
-    @Override
-    public void onEvent(GenericEvent event) {
- 
-    }    
     private int compareHands(int[] hand1, int[] hand2) {
         if (hand1[0] != hand2[0]) {
             return Integer.compare(hand1[0], hand2[0]); // Compare hand types
@@ -97,18 +94,22 @@ public class PokerGame implements EventListener {
             return Integer.compare(hand1[1], hand2[1]); // Compare high cards
         }
         return Integer.compare(hand1[2], hand2[2]); // Compare secondary cards (for ties)
-   
     }
-  
+
+    private String getHandName(int value) {
+        String[] handNames = {
+            "High Card", "Pair", "Two Pair", "Three of a Kind",
+            "Straight", "Flush", "Full House", "Four of a Kind",
+            "Straight Flush", "Royal Flush"
+        };
+        if (value >= 1 && value <= handNames.length) {
+            return handNames[value - 1];
+        }
+        return "Unknown Hand";
     }
-    private String getHandName(int value){
-    String[] handNames = {
-        "High Card", "Pair", "Two Pair", "Three of a Kind",
-        "Straight", "Flush", "Full House", "Four of a Kind",
-        "Straight Flush", "Royal Flush"
-    };
-    if (value >= 1 && value <= handNames.length) {
-        return handNames[value - 1];
+
+    @Override
+    public void onEvent(GenericEvent event) {
+        // Handle events if needed
     }
-    return "Unknown Hand";    
 }
