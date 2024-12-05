@@ -20,7 +20,7 @@ public class PokerGame implements EventListener {
         this.deck = new Deck();
         this.players = players;
         this.channel = channel;
-        this.playerHands = new HashMap<>();
+        this.playerHands = new HashMap<Player, Hand>();
         for (Player player : players) {
             playerHands.put(player, new Hand());
         }
@@ -52,7 +52,7 @@ public class PokerGame implements EventListener {
 
         for (int i = 0; i < numPlayers; i++) {
             int[] handValue = playerHands.get(players.get(i)).evaluate();
-            System.out.println("Player " + (i + 1) + " has: " + getHandName(handValue[0]));
+            channel.sendMessage("Player " + players.get(i + 1) + " has: " + getHandName(handValue[0]));
 
             // Update the best hand
             if (bestHandValue == null || compareHands(handValue, bestHandValue) > 0) {

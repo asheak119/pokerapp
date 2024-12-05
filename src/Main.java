@@ -14,7 +14,7 @@ public class Main implements EventListener {
 
     public static void main(String[] args) {
         // Initialize the bot
-        JDABuilder.createDefault("TOKEN_HERE") // Replace with your bot token
+        JDABuilder.createDefault("") // Replace with your bot token
             .disableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS)
             .setEnabledIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
             .addEventListeners(new Main()) // Add event listener
