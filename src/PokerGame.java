@@ -52,7 +52,7 @@ public class PokerGame implements EventListener {
 
         for (int i = 0; i < numPlayers; i++) {
             int[] handValue = playerHands.get(players.get(i)).evaluate();
-            channel.sendMessage("Player " + players.get(i + 1) + " has: " + getHandName(handValue[0]));
+            channel.sendMessage("Player " + players.get(i).getUser().getAsMention() + " has: " + getHandName(handValue[0]));
 
             // Update the best hand
             if (bestHandValue == null || compareHands(handValue, bestHandValue) > 0) {
