@@ -57,7 +57,7 @@ public class PokerGame implements EventListener {
 
         for (int i = 0; i < numPlayers; i++) {
             int[] handValue = playerHands.get(players.get(i)).evaluate();
-            channel.sendMessage("Player " + players.get(i).getUser().getAsMention() + " has: " + getHandName(handValue[0]));
+            channel.sendMessage("Player " + players.get(i).getUser().getAsMention() + " has: " + getHandName(handValue[0])).queue();
 
             // Update the best hand
             if (bestHandValue == null || compareHands(handValue, bestHandValue) > 0) {
@@ -67,9 +67,9 @@ public class PokerGame implements EventListener {
         }
 
         if (winnerIndex >= 0) {
-            channel.sendMessage("Player " + (winnerIndex + 1) + " wins with a " + getHandName(bestHandValue[0]));
+            channel.sendMessage("Player " + (winnerIndex + 1) + " wins with a " + getHandName(bestHandValue[0])).queue();
         } else {
-            channel.sendMessage("No winner could be determined.");
+            channel.sendMessage("No winner could be determined.").queue();
         }
     }
 
