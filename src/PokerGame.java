@@ -46,6 +46,11 @@ public class PokerGame implements EventListener {
         }
         channel.sendMessage("Hands dealt!").queue();
 
+        determineWinner();
+    }
+
+    public void determineWinner() {
+        
         // Evaluate hands and determine the winner
         int winnerIndex = -1;
         int[] bestHandValue = null;
