@@ -67,9 +67,9 @@ public class PokerGame implements EventListener {
         }
 
         if (winnerIndex >= 0) {
-            System.out.println("Player " + (winnerIndex + 1) + " wins with a " + getHandName(bestHandValue[0]));
+            channel.sendMessage("Player " + (winnerIndex + 1) + " wins with a " + getHandName(bestHandValue[0]));
         } else {
-            System.out.println("No winner could be determined.");
+            channel.sendMessage("No winner could be determined.");
         }
     }
 
