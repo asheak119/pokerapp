@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.entities.User;
 
 public class Main implements EventListener {
     private List<Player> players = new ArrayList<>();
+    private HashMap<User, Player> knownPlayers = new HashMap<>();
     private boolean gameInitiated = false;
 
     public static void main(String[] args) {
@@ -50,8 +51,11 @@ public class Main implements EventListener {
             } else if (gameInitiated) {
                 if (messageContent.equalsIgnoreCase("!join")) {
                     User user = messageEvent.getAuthor();
-                    if (!players.contains(new Player(user))) {
-                        players.add(new Player(user));
+                    if (!knownPlayers.containsKey(user)) {
+                        knownPlayers.put(user, new Player(user));
+                    }
+                    if (!players.contains(knownPlayers.get(user))) {
+                        players.add(knownPlayers.get(user));
                         channel.sendMessage(user.getAsMention() + " has joined the game!").queue();
                     } else {
                         channel.sendMessage(user.getAsMention() + " you have already joined the game!").queue();
