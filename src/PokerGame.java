@@ -76,16 +76,45 @@ public class PokerGame implements EventListener {
     public void bettingRound() {
         int pot = 0;
         int currentBet = 0;
-        // Implement betting round logic here
+        Map<Player, Integer> currentBets = new HashMap<>();
+        List<Player> activePlayers = new ArrayList<>(players); // To handle folded players
+    
+        // Initial betting round prompt
         for (Player player : players) {
-        // Inform the player of the current bet and their chips
-        channel.sendMessage(player.getUser().getAsMention() +
-            " Current bet: " + currentBet + " | Your chips: " + player.getChips() +
-            " | Type your bet (or type 'fold' to fold, 'check' to match the bet)").queue();
+            currentBets.put(player, 0); // Initialize all players' bets to 0
         }
+    
+        // Proceed with betting rounds until all active players have either folded or called the highest bet
+        while (activePlayers.size() > 1) {  // At least two players should remain active
+            for (Player player : activePlayers) {
+                channel.sendMessage(player.getUser().getAsMention() + 
+                    " Your current chips: " + player.getChips() +
+                    ". Current bet: " + currentBet + ". Type your action (bet <amount>, fold, check):").queue();
+                
+                // Example input handling:
+                String response = getPlayerResponse();
+                if (response.equalsIgnoreCase("fold")) {
+                     activePlayers.remove(player);  // Player folds, so they are no longer active
+                     continue;
+                } else if (response.equalsIgnoreCase("check") && currentBet > 0) {
+                     player.placeBet(currentBet);  // Player matches current bet
+                } else if (response.startsWith("bet ")) {
+                     int betAmount = Integer.parseInt(response.split(" ")[1]);
+                     if (betAmount > player.getChips()) {
+                         channel.sendMessage("You don't have enough chips!").queue();
+                     } else {
+                         player.placeBet(betAmount);
+                         currentBet = betAmount;
+                     }
+                 }
+                // Update pot based on bet
+                pot += player.getBet();
+            }
+        }
+        // End of the betting round
         channel.sendMessage("Betting round complete. Total pot: " + pot).queue();
     }
-   
+    
     private void distributePot(Player winner, int pot) {
         winner.winChips(pot);
         channel.sendMessage(winner.getUser().getAsMention() + " wins the pot of " + pot + " chips!").queue();
