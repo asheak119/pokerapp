@@ -74,13 +74,23 @@ public class PokerGame implements EventListener {
     }
 
     public void bettingRound() {
+        int pot = 0;
+        int currentBet = 0;
         // Implement betting round logic here
         for (Player player : players) {
-            channel.sendMessage(player.getUser().getAsMention() + "What is your bet?").queue();
-            // Wait for player input
-
+        // Inform the player of the current bet and their chips
+        channel.sendMessage(player.getUser().getAsMention() +
+            " Current bet: " + currentBet + " | Your chips: " + player.getChips() +
+            " | Type your bet (or type 'fold' to fold, 'check' to match the bet)").queue();
         }
+        channel.sendMessage("Betting round complete. Total pot: " + pot).queue();
     }
+   
+    private void distributePot(Player winner, int pot) {
+        winner.winChips(pot);
+        channel.sendMessage(winner.getUser().getAsMention() + " wins the pot of " + pot + " chips!").queue();
+    }
+    
 
     private void sendMessageToPlayer(Player player, String message) {
         User user = player.getUser();
