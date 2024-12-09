@@ -55,11 +55,7 @@ public class PokerGame implements EventListener {
             sendMessageToPlayer(players.get(i), "Your hand: " + Arrays.toString(cards));
         }
         channel.sendMessage("Hands dealt!").queue();
-
-        while (stillPlaying) {
-            bettingRound();
-        }
-        determineWinner();
+        bettingRound();
     }
 
     public void bettingRound() {
@@ -129,6 +125,17 @@ public class PokerGame implements EventListener {
         return "Unknown Hand";
     }
 
+    public void fold() {
+        players.remove(players.get(waitingOnBet));
+        numPlayers--;
+        if (numPlayers == 1) {
+            stillPlaying = false;
+        } else {
+            waitingOnBet = (waitingOnBet + 1) % numPlayers;
+            channel.sendMessage(players.get(waitingOnBet).getUser().getAsMention() + " has folded.").queue();
+        }
+    }
+
     @Override
     public void onEvent(GenericEvent event) {
         // Handle events if needed
@@ -139,16 +146,7 @@ public class PokerGame implements EventListener {
 
             if (waitingOnBet != -1 && user.equals(players.get(waitingOnBet).getUser())) {
                 Player player = players.get(waitingOnBet);
-                if (messageContent.equalsIgnoreCase("!fold")) {
-                    players.remove(player);
-                    numPlayers--;
-                    if (numPlayers == 1) {
-                        stillPlaying = false;
-                    } else {
-                        waitingOnBet = (waitingOnBet + 1) % numPlayers;
-                        channel.sendMessage(player.getUser().getAsMention() + " has folded.").queue();
-                    }
-                } else if (messageContent.equalsIgnoreCase("!check")) {
+                 if (messageContent.equalsIgnoreCase("!check")) {
                     if (currentBet == player.getCurBet()) {
                         waitingOnBet = (waitingOnBet + 1) % numPlayers;
                         channel.sendMessage(player.getUser().getAsMention() + " has checked.").queue();

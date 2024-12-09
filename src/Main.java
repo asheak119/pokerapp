@@ -12,6 +12,7 @@ public class Main implements EventListener {
     private List<Player> players = new ArrayList<>();
     private HashMap<User, Player> knownPlayers = new HashMap<>();
     private boolean gameInitiated = false;
+    private PokerGame game;
 
     public static void main(String[] args) {
         // Initialize the bot
@@ -65,10 +66,15 @@ public class Main implements EventListener {
                         channel.sendMessage("Not enough players to start the game.").queue();
                     } else {
                         channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
-                        PokerGame game = new PokerGame(players, channel);
+                        game = new PokerGame(players, channel);
+
                         game.startGame();
                     }
+                } //if () { 
+                else if (messageContent.equalsIgnoreCase("!fold")) {
+                    game.fold();
                 }
+                //}
             }
         }
     }
