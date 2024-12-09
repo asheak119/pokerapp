@@ -73,6 +73,8 @@ public class Main implements EventListener {
                 } //if () { 
                 else if (messageContent.equalsIgnoreCase("!fold")) {
                     game.fold();
+                } else {
+                    game.bettingLogic(Integer.parseInt(messageContent));
                 }
                 //}
             }

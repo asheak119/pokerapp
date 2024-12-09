@@ -68,6 +68,28 @@ public class PokerGame implements EventListener {
         " | Type your bet (or type '!fold' to fold, '!check' to match the bet)").queue();
     }
 
+    public void bettingLogic(int bet) {
+        Player player = players.get(waitingOnBet);
+        try {
+            if (bet > 0 && bet <= maxBet) {
+                player.bet(bet - currentBet);
+                waitingOnBet = (waitingOnBet + 1) % numPlayers;
+                pot += bet - currentBet;
+                if (bet > currentBet) {
+                    lastRaised = waitingOnBet;
+                    currentBet = bet;
+                    bettingRound();
+                } else if (waitingOnBet == lastRaised) {
+                    determineWinner();
+                }
+            } else {
+                channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
+            }
+        } catch (NumberFormatException e) {
+            channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
+        }
+    }
+
     public void determineWinner() {
         
         // Evaluate hands and determine the winner
@@ -128,11 +150,11 @@ public class PokerGame implements EventListener {
     public void fold() {
         players.remove(players.get(waitingOnBet));
         numPlayers--;
+        channel.sendMessage(players.get(waitingOnBet).getUser().getAsMention() + " has folded.").queue();
         if (numPlayers == 1) {
-            stillPlaying = false;
+            Player player = players.get(waitingOnBet);
         } else {
             waitingOnBet = (waitingOnBet + 1) % numPlayers;
-            channel.sendMessage(players.get(waitingOnBet).getUser().getAsMention() + " has folded.").queue();
         }
     }
 
