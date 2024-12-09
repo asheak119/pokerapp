@@ -147,16 +147,15 @@ public class PokerGame implements EventListener {
         return "Unknown Hand";
     }
 
-    public void fold() {
-        players.remove(players.get(waitingOnBet));
-        numPlayers--;
-        channel.sendMessage(players.get(waitingOnBet).getUser().getAsMention() + " has folded.").queue();
-        if (numPlayers == 1) {
-            Player player = players.get(waitingOnBet);
-        } else {
-            waitingOnBet = (waitingOnBet + 1) % numPlayers;
-        }
+    public void fold(Player player) {
+    if (!foldedPlayers.contains(player)) {
+        foldedPlayers.add(player);
+        channel.sendMessage(player.getUser().getAsMention() + " has folded.").queue();
+    } else {
+        channel.sendMessage(player.getUser().getAsMention() + " has already folded.").queue();
     }
+}
+
 
     @Override
     public void onEvent(GenericEvent event) {
