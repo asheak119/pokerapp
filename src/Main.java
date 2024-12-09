@@ -67,8 +67,6 @@ public class Main implements EventListener {
                         channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
                         PokerGame game = new PokerGame(players, channel);
                         game.startGame();
-                        players.clear(); // Clear the list of players after starting the game
-                        gameInitiated = false; // Reset the game initiation flag
                     }
                 }
             }

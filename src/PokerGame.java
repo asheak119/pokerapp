@@ -14,15 +14,25 @@ public class PokerGame implements EventListener {
     private int numPlayers;
     private MessageChannel channel;
     private List<Player> players;
+    private int waitingOnBet = -1;
+    private int lastRaised = 0;
+    private int pot = 0;
+    private int currentBet = 0;
+    private int maxBet;
+    private boolean stillPlaying = true;
 
     public PokerGame(List<Player> players, MessageChannel channel) {
         this.numPlayers = players.size();
         this.deck = new Deck();
         this.players = players;
+        maxBet = players.get(0).balance();
         this.channel = channel;
         this.playerHands = new HashMap<Player, Hand>();
         for (Player player : players) {
             playerHands.put(player, new Hand());
+            if (player.balance() < maxBet) {
+                maxBet = player.balance();
+            }
         }
     }
 
@@ -46,7 +56,20 @@ public class PokerGame implements EventListener {
         }
         channel.sendMessage("Hands dealt!").queue();
 
+        while (stillPlaying) {
+            bettingRound();
+        }
         determineWinner();
+    }
+
+    public void bettingRound() {
+        if (waitingOnBet == -1) {
+            waitingOnBet = 0;
+        }
+        Player player = players.get(waitingOnBet);
+        channel.sendMessage(player.getUser().getAsMention() +
+        " Current bet: " + currentBet + " | Your chips: " + player.balance() +
+        " | Type your bet (or type '!fold' to fold, '!check' to match the bet)").queue();
     }
 
     public void determineWinner() {
@@ -57,7 +80,8 @@ public class PokerGame implements EventListener {
 
         for (int i = 0; i < numPlayers; i++) {
             int[] handValue = playerHands.get(players.get(i)).evaluate();
-            channel.sendMessage("Player " + players.get(i).getUser().getAsMention() + " has: " + getHandName(handValue[0])).queue();
+            channel.sendMessage(players.get(i).getUser().getAsMention() + " has a " + getHandName(handValue[0]) + " with cards: " + 
+            playerHands.get(players.get(i)).toString()).queue();
 
             // Update the best hand
             if (bestHandValue == null || compareHands(handValue, bestHandValue) > 0) {
@@ -67,18 +91,10 @@ public class PokerGame implements EventListener {
         }
 
         if (winnerIndex >= 0) {
-            channel.sendMessage("Player " + (winnerIndex + 1) + " wins with a " + getHandName(bestHandValue[0])).queue();
+            channel.sendMessage(players.get(winnerIndex).getUser().getAsMention() + " wins the pot of $" + pot).queue();
+            players.get(winnerIndex).win(pot);
         } else {
             channel.sendMessage("No winner could be determined.").queue();
-        }
-    }
-
-    public void bettingRound() {
-        // Implement betting round logic here
-        for (Player player : players) {
-            channel.sendMessage(player.getUser().getAsMention() + "What is your bet?").queue();
-            // Wait for player input
-
         }
     }
 
@@ -116,5 +132,50 @@ public class PokerGame implements EventListener {
     @Override
     public void onEvent(GenericEvent event) {
         // Handle events if needed
+        if (event instanceof MessageReceivedEvent) {
+            MessageReceivedEvent messageEvent = (MessageReceivedEvent) event;
+            String messageContent = messageEvent.getMessage().getContentDisplay();
+            User user = messageEvent.getAuthor();
+
+            if (waitingOnBet != -1 && user.equals(players.get(waitingOnBet).getUser())) {
+                Player player = players.get(waitingOnBet);
+                if (messageContent.equalsIgnoreCase("!fold")) {
+                    players.remove(player);
+                    numPlayers--;
+                    if (numPlayers == 1) {
+                        stillPlaying = false;
+                    } else {
+                        waitingOnBet = (waitingOnBet + 1) % numPlayers;
+                        channel.sendMessage(player.getUser().getAsMention() + " has folded.").queue();
+                    }
+                } else if (messageContent.equalsIgnoreCase("!check")) {
+                    if (currentBet == player.getCurBet()) {
+                        waitingOnBet = (waitingOnBet + 1) % numPlayers;
+                        channel.sendMessage(player.getUser().getAsMention() + " has checked.").queue();
+                    } else {
+                        sendMessageToPlayer(player, "You must match the current bet or fold.");
+                    }
+                } else {
+                    try {
+                        int bet = Integer.parseInt(messageContent);
+                        if (bet > 0 && bet <= maxBet) {
+                            player.bet(bet - currentBet);
+                            waitingOnBet = (waitingOnBet + 1) % numPlayers;
+                            pot += bet - currentBet;
+                            if (bet > currentBet) {
+                                lastRaised = waitingOnBet;
+                                currentBet = bet;
+                            } else if (waitingOnBet == lastRaised) {
+                                stillPlaying = false;
+                            }
+                        } else {
+                            channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
+                        }
+                    } catch (NumberFormatException e) {
+                        channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
+                    }
+                }
+            }
+        }
     }
 }
