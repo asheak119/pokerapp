@@ -13,7 +13,7 @@ public class Main implements EventListener {
     private HashMap<User, Player> knownPlayers = new HashMap<>();
     private boolean gameInitiated = false;
     private boolean gameInProgress = false;
-    private PokerGame game;
+    private PokerGame game = null;
 
     public static void main(String[] args) {
         // Initialize the bot
@@ -23,18 +23,6 @@ public class Main implements EventListener {
             .addEventListeners(new Main()) // Add event listener
             .build();
         // Hand value representations
-        String[] handValues = {
-            "High Card",
-            "Pair",
-            "Two Pair",
-            "Three of a Kind",
-            "Straight",
-            "Flush",
-            "Full House",
-            "Four of a Kind",
-            "Straight Flush",
-            "Royal Flush"
-        };
     }
 
     @Override
@@ -45,6 +33,7 @@ public class Main implements EventListener {
             String messageContent = messageEvent.getMessage().getContentDisplay();
             System.out.println("Received a message: " + messageContent);
             MessageChannel channel = messageEvent.getChannel();
+            User user = messageEvent.getAuthor();
 
             if (messageContent.equalsIgnoreCase("!poker")) {
                 gameInitiated = true;
@@ -52,7 +41,6 @@ public class Main implements EventListener {
                 channel.sendMessage("Type \"!join\" to join the game, or type \"!start\" to start the game.").queue();
             } else if (gameInitiated) {
                 if (messageContent.equalsIgnoreCase("!join")) {
-                    User user = messageEvent.getAuthor();
                     if (!knownPlayers.containsKey(user)) {
                         knownPlayers.put(user, new Player(user));
                     }
@@ -63,24 +51,35 @@ public class Main implements EventListener {
                         channel.sendMessage(user.getAsMention() + " you have already joined the game!").queue();
                     }
                 }  else if (messageContent.equalsIgnoreCase("!start")) {
-                if (players.size() < 2) {
-                    channel.sendMessage("Not enough players to start the game.").queue();
-                } else {
-                    channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
-                    game = new PokerGame(players, channel);
-                    game.startGame();
-                    gameInProgress = true; 
-                    
-            } else if (messageContent.equalsIgnoreCase("!fold")) {
-                if (gameInProgress) {
-                    Player player = knownPlayers.get(messageEvent.getAuthor());
-                    if (player != null) {
-                        game.fold(player);
+                    if (gameInProgress && game != null && game.getTurn() != -1) {
+                        channel.sendMessage("A game is already in progress!").queue();
                     } else {
-                        channel.sendMessage("You are not in the game!").queue();
+                        if (gameInProgress && game != null) {
+                            game = null;
+                            gameInProgress = false;
+                        }
+                        if (players.size() < 2) {
+                            channel.sendMessage("Not enough players to start the game.").queue();
+                        } else {
+                            channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
+                            game = new PokerGame(players, channel);
+                            game.startGame();
+                            gameInProgress = true;
+                            return;
+                        }
                     }
+                }
+            } if (gameInProgress && game != null && user.equals(players.get(game.getTurn()).getUser())) {
+                if (messageContent.equalsIgnoreCase("!fold")) {
+                    game.fold();
+                } else if (messageContent.equalsIgnoreCase("!call")) {
+                    game.call();  
                 } else {
-                    channel.sendMessage("No game in progress.").queue();
+                    try {
+                    game.bettingLogic(Integer.parseInt(messageContent));
+                    } catch (NumberFormatException e) {
+                        channel.sendMessage("Invalid input. Please enter a valid input.").queue();
+                    }
                 }
             }
         }

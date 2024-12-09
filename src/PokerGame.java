@@ -1,14 +1,8 @@
 import java.util.*;
-import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.hooks.EventListener;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.events.GenericEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.entities.User;
 
-public class PokerGame implements EventListener {
+public class PokerGame {
     private Deck deck;
     private HashMap<Player, Hand> playerHands;
     private int numPlayers;
@@ -19,7 +13,6 @@ public class PokerGame implements EventListener {
     private int pot = 0;
     private int currentBet = 0;
     private int maxBet;
-    private boolean stillPlaying = true;
 
     public PokerGame(List<Player> players, MessageChannel channel) {
         this.numPlayers = players.size();
@@ -33,15 +26,15 @@ public class PokerGame implements EventListener {
             if (player.balance() < maxBet) {
                 maxBet = player.balance();
             }
+            player.setCurBet(0);
         }
     }
 
-    public void startGame() {
-        if (numPlayers <= 0) {
-            System.out.println("No players in the game!");
-            return; // Exit early if there are no players
-        }
+    public int getTurn() {
+        return waitingOnBet;
+    }
 
+    public void startGame() {
         deck.shuffle();
         System.out.println("Deck shuffled!");
 
@@ -55,39 +48,47 @@ public class PokerGame implements EventListener {
             sendMessageToPlayer(players.get(i), "Your hand: " + Arrays.toString(cards));
         }
         channel.sendMessage("Hands dealt!").queue();
+        waitingOnBet = 0;
         bettingRound();
     }
 
     public void bettingRound() {
-        if (waitingOnBet == -1) {
-            waitingOnBet = 0;
-        }
         Player player = players.get(waitingOnBet);
         channel.sendMessage(player.getUser().getAsMention() +
         " Current bet: " + currentBet + " | Your chips: " + player.balance() +
-        " | Type your bet (or type '!fold' to fold, '!check' to match the bet)").queue();
+        " | Type your bet (or type '!fold' to fold, '!call' to match the bet)").queue();
     }
 
     public void bettingLogic(int bet) {
         Player player = players.get(waitingOnBet);
-        try {
-            if (bet > 0 && bet <= maxBet) {
-                player.bet(bet - currentBet);
-                waitingOnBet = (waitingOnBet + 1) % numPlayers;
-                pot += bet - currentBet;
-                if (bet > currentBet) {
-                    lastRaised = waitingOnBet;
-                    currentBet = bet;
-                    bettingRound();
-                } else if (waitingOnBet == lastRaised) {
-                    determineWinner();
-                }
-            } else {
-                channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
+        int totalBet = bet + player.getCurBet();
+    
+        if (totalBet >= currentBet && totalBet <= maxBet) {
+            player.bet(bet);
+            player.setCurBet(totalBet);
+            pot += bet;
+    
+            if (totalBet > currentBet) {
+                currentBet = totalBet;
+                lastRaised = waitingOnBet;
             }
-        } catch (NumberFormatException e) {
-            channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
+    
+            waitingOnBet = (waitingOnBet + 1) % numPlayers;
+    
+            if (waitingOnBet == lastRaised) {
+                determineWinner();
+            } else {
+                bettingRound();
+            }
+        } else {
+            channel.sendMessage("Invalid bet amount. Please enter a valid amount.").queue();
         }
+    }
+    
+    public void call() {
+        Player player = players.get(waitingOnBet);
+        int callAmount = currentBet - player.getCurBet();
+        bettingLogic(callAmount);
     }
 
     public void determineWinner() {
@@ -114,6 +115,7 @@ public class PokerGame implements EventListener {
         } else {
             channel.sendMessage("No winner could be determined.").queue();
         }
+        waitingOnBet = -1;
     }
 
     private void sendMessageToPlayer(Player player, String message) {
@@ -147,54 +149,14 @@ public class PokerGame implements EventListener {
         return "Unknown Hand";
     }
 
-    public void fold(Player player) {
-    if (!foldedPlayers.contains(player)) {
-        foldedPlayers.add(player);
-        channel.sendMessage(player.getUser().getAsMention() + " has folded.").queue();
-    } else {
-        channel.sendMessage(player.getUser().getAsMention() + " has already folded.").queue();
-    }
-}
-
-
-    @Override
-    public void onEvent(GenericEvent event) {
-        // Handle events if needed
-        if (event instanceof MessageReceivedEvent) {
-            MessageReceivedEvent messageEvent = (MessageReceivedEvent) event;
-            String messageContent = messageEvent.getMessage().getContentDisplay();
-            User user = messageEvent.getAuthor();
-
-            if (waitingOnBet != -1 && user.equals(players.get(waitingOnBet).getUser())) {
-                Player player = players.get(waitingOnBet);
-                 if (messageContent.equalsIgnoreCase("!check")) {
-                    if (currentBet == player.getCurBet()) {
-                        waitingOnBet = (waitingOnBet + 1) % numPlayers;
-                        channel.sendMessage(player.getUser().getAsMention() + " has checked.").queue();
-                    } else {
-                        sendMessageToPlayer(player, "You must match the current bet or fold.");
-                    }
-                } else {
-                    try {
-                        int bet = Integer.parseInt(messageContent);
-                        if (bet > 0 && bet <= maxBet) {
-                            player.bet(bet - currentBet);
-                            waitingOnBet = (waitingOnBet + 1) % numPlayers;
-                            pot += bet - currentBet;
-                            if (bet > currentBet) {
-                                lastRaised = waitingOnBet;
-                                currentBet = bet;
-                            } else if (waitingOnBet == lastRaised) {
-                                stillPlaying = false;
-                            }
-                        } else {
-                            channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
-                        }
-                    } catch (NumberFormatException e) {
-                        channel.sendMessage("Invalid bet amount. Please enter a valid amount.");
-                    }
-                }
-            }
+    public void fold() {
+        players.remove(players.get(waitingOnBet));
+        numPlayers--;
+        channel.sendMessage(players.get(waitingOnBet).getUser().getAsMention() + " has folded.").queue();
+        if (numPlayers == 1) {
+            determineWinner();
+        } else {
+            waitingOnBet = (waitingOnBet + 1) % numPlayers;
         }
     }
 }
