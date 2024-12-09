@@ -12,6 +12,7 @@ public class Main implements EventListener {
     private List<Player> players = new ArrayList<>();
     private HashMap<User, Player> knownPlayers = new HashMap<>();
     private boolean gameInitiated = false;
+    private boolean gameInProgress = false;
     private PokerGame game;
 
     public static void main(String[] args) {
