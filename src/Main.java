@@ -61,22 +61,26 @@ public class Main implements EventListener {
                     } else {
                         channel.sendMessage(user.getAsMention() + " you have already joined the game!").queue();
                     }
-                } else if (messageContent.equalsIgnoreCase("!start")) {
-                    if (players.size() < 2) {
-                        channel.sendMessage("Not enough players to start the game.").queue();
-                    } else {
-                        channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
-                        game = new PokerGame(players, channel);
-
-                        game.startGame();
-                    }
-                } //if () { 
-                else if (messageContent.equalsIgnoreCase("!fold")) {
-                    game.fold();
+                }  else if (messageContent.equalsIgnoreCase("!start")) {
+                if (players.size() < 2) {
+                    channel.sendMessage("Not enough players to start the game.").queue();
                 } else {
-                    game.bettingLogic(Integer.parseInt(messageContent));
+                    channel.sendMessage("Starting the game with " + players.size() + " players!").queue();
+                    game = new PokerGame(players, channel);
+                    game.startGame();
+                    gameInProgress = true; 
+                    
+            } else if (messageContent.equalsIgnoreCase("!fold")) {
+                if (gameInProgress) {
+                    Player player = knownPlayers.get(messageEvent.getAuthor());
+                    if (player != null) {
+                        game.fold(player);
+                    } else {
+                        channel.sendMessage("You are not in the game!").queue();
+                    }
+                } else {
+                    channel.sendMessage("No game in progress.").queue();
                 }
-                //}
             }
         }
     }
